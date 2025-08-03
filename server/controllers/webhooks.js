@@ -79,12 +79,15 @@ export const stripeWebhooks = async (request, response) => {
     event = stripeInstance.webhooks.constructEvent(request.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   }
   catch (err) {
+    console.log(`Webhook signature verification failed.`, err.message);
     response.status(400).send(`Webhook Error: ${err.message}`);
+    return;
   }
 
   // Handle the event
   switch (event.type) {
     case 'payment_intent.succeeded': {
+      console.log('Payment succeeded, processing enrollment...');
 
       const paymentIntent = event.data.object;
       const paymentIntentId = paymentIntent.id;
@@ -94,24 +97,56 @@ export const stripeWebhooks = async (request, response) => {
         payment_intent: paymentIntentId,
       });
 
+      if (!session.data || session.data.length === 0) {
+        console.log('No session found for payment intent:', paymentIntentId);
+        break;
+      }
+
       const { purchaseId } = session.data[0].metadata;
+      
+      if (!purchaseId) {
+        console.log('No purchaseId found in session metadata');
+        break;
+      }
 
       const purchaseData = await Purchase.findById(purchaseId)
+      
+      if (!purchaseData) {
+        console.log('Purchase data not found for ID:', purchaseId);
+        break;
+      }
+
       const userData = await User.findById(purchaseData.userId)
       const courseData = await Course.findById(purchaseData.courseId.toString())
 
-      courseData.enrolledStudents.push(userData._id)
-      await courseData.save()
+      if (!userData || !courseData) {
+        console.log('User or course data not found');
+        break;
+      }
 
-      userData.enrolledCourses.push(courseData._id)
-      await userData.save()
+      // Check if already enrolled to prevent duplicates
+      if (!courseData.enrolledStudents.includes(userData._id)) {
+        courseData.enrolledStudents.push(userData._id)
+        await courseData.save()
+        console.log('Student added to course enrolled list');
+      }
+
+      if (!userData.enrolledCourses.includes(courseData._id)) {
+        userData.enrolledCourses.push(courseData._id)
+        await userData.save()
+        console.log('Course added to user enrolled list');
+      }
 
       purchaseData.status = 'completed'
       await purchaseData.save()
+      
+      console.log('Enrollment completed successfully');
 
       break;
     }
     case 'payment_intent.payment_failed': {
+      console.log('Payment failed, updating purchase status...');
+      
       const paymentIntent = event.data.object;
       const paymentIntentId = paymentIntent.id;
 
@@ -120,11 +155,29 @@ export const stripeWebhooks = async (request, response) => {
         payment_intent: paymentIntentId,
       });
 
+      if (!session.data || session.data.length === 0) {
+        console.log('No session found for failed payment intent:', paymentIntentId);
+        break;
+      }
+
       const { purchaseId } = session.data[0].metadata;
+      
+      if (!purchaseId) {
+        console.log('No purchaseId found in failed payment session metadata');
+        break;
+      }
 
       const purchaseData = await Purchase.findById(purchaseId)
+      
+      if (!purchaseData) {
+        console.log('Purchase data not found for failed payment ID:', purchaseId);
+        break;
+      }
+      
       purchaseData.status = 'failed'
       await purchaseData.save()
+      
+      console.log('Purchase marked as failed');
 
       break;
     }

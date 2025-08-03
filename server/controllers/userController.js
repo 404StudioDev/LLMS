@@ -35,12 +35,21 @@ export const purchaseCourse = async (req, res) => {
 
 
         const userId = req.auth.userId
+        
+        console.log('Creating purchase for user:', userId, 'course:', courseId);
 
         const courseData = await Course.findById(courseId)
         const userData = await User.findById(userId)
 
         if (!userData || !courseData) {
+            console.log('User or course data not found');
             return res.json({ success: false, message: 'Data Not Found' })
+        }
+        
+        // Check if user is already enrolled
+        if (userData.enrolledCourses.includes(courseId)) {
+            console.log('User already enrolled in course');
+            return res.json({ success: false, message: 'Already enrolled in this course' })
         }
 
         const purchaseData = {
@@ -50,6 +59,7 @@ export const purchaseCourse = async (req, res) => {
         }
 
         const newPurchase = await Purchase.create(purchaseData)
+        console.log('Purchase created with ID:', newPurchase._id);
 
         // Stripe Gateway Initialize
         const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
@@ -77,11 +87,14 @@ export const purchaseCourse = async (req, res) => {
                 purchaseId: newPurchase._id.toString()
             }
         })
+        
+        console.log('Stripe session created with metadata:', { purchaseId: newPurchase._id.toString() });
 
         res.json({ success: true, session_url: session.url });
 
 
     } catch (error) {
+        console.error('Purchase error:', error);
         res.json({ success: false, message: error.message });
     }
 }
@@ -92,6 +105,8 @@ export const userEnrolledCourses = async (req, res) => {
     try {
 
         const userId = req.auth.userId
+        
+        console.log('Fetching enrolled courses for user:', userId);
 
         const userData = await User.findById(userId)
             .populate({
@@ -101,6 +116,13 @@ export const userEnrolledCourses = async (req, res) => {
                     select: 'name'
                 }
             })
+            
+        if (!userData) {
+            console.log('User not found:', userId);
+            return res.json({ success: false, message: 'User not found' })
+        }
+        
+        console.log('User enrolled courses count:', userData.enrolledCourses.length);
 
         res.json({ success: true, enrolledCourses: userData.enrolledCourses })
 

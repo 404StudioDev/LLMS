@@ -40,6 +40,7 @@ const MyEnrollments = () => {
     useEffect(() => {
         if (userData) {
             fetchUserEnrolledCourses()
+            console.log('User data available, fetching enrolled courses...');
         }
     }, [userData])
 
@@ -47,6 +48,7 @@ const MyEnrollments = () => {
 
         if (enrolledCourses.length > 0) {
             getCourseProgress()
+            console.log('Enrolled courses available:', enrolledCourses.length);
         }
 
     }, [enrolledCourses])

@@ -7,6 +7,7 @@ const Loading = () => {
 
   useEffect(() => {
     if (path) {
+      console.log('Loading component redirecting to:', path);
       const timer = setTimeout(() => {
         navigate(`/${path}`);
       }, 5000);
