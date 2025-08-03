@@ -176,7 +176,18 @@ const Player = ({ }) => {
           playerData
             ? (
               <div>
-                <YouTube iframeClassName='w-full aspect-video' videoId={playerData.lectureUrl.split('/').pop()} />
+                <YouTube 
+                  iframeClassName='w-full aspect-video' 
+                  videoId={
+                    playerData.lectureUrl.includes('youtube.com') || playerData.lectureUrl.includes('youtu.be') 
+                      ? playerData.lectureUrl.includes('youtu.be') 
+                        ? playerData.lectureUrl.split('/').pop().split('?')[0]
+                        : playerData.lectureUrl.includes('watch?v=')
+                          ? playerData.lectureUrl.split('watch?v=')[1].split('&')[0]
+                          : playerData.lectureUrl.split('/').pop().split('?')[0]
+                      : playerData.lectureUrl.split('/').pop()
+                  } 
+                />
                 <div className='flex justify-between items-center mt-1'>
                   <p className='text-xl '>{playerData.chapter}.{playerData.lecture} {playerData.lectureTitle}</p>
                   <button onClick={() => markLectureAsCompleted(playerData.lectureId)} className='text-blue-600'>{progressData && progressData.lectureCompleted.includes(playerData.lectureId) ? 'Completed' : 'Mark Complete'}</button>

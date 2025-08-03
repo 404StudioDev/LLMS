@@ -240,6 +240,7 @@ const AddCourse = () => {
                   <input
                     type="text"
                     className="mt-1 block w-full border rounded py-1 px-2"
+                    placeholder="Enter YouTube URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID)"
                     value={lectureDetails.lectureUrl}
                     onChange={(e) => setLectureDetails({ ...lectureDetails, lectureUrl: e.target.value })}
                   />

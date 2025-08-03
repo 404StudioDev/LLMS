@@ -61,7 +61,8 @@ const CourseDetails = () => {
       }
 
       if (isAlreadyEnrolled) {
-        return toast.warn('Already Enrolled')
+        navigate('/player/' + courseData._id)
+        return;
       }
 
       const token = await getToken();
@@ -146,7 +147,13 @@ const CourseDetails = () => {
                             <p>{lecture.lectureTitle}</p>
                             <div className='flex gap-2'>
                               {lecture.isPreviewFree && <p onClick={() => setPlayerData({
-                                videoId: lecture.lectureUrl.split('/').pop()
+                                videoId: lecture.lectureUrl.includes('youtube.com') || lecture.lectureUrl.includes('youtu.be') 
+                                  ? lecture.lectureUrl.includes('youtu.be') 
+                                    ? lecture.lectureUrl.split('/').pop().split('?')[0]
+                                    : lecture.lectureUrl.includes('watch?v=')
+                                      ? lecture.lectureUrl.split('watch?v=')[1].split('&')[0]
+                                      : lecture.lectureUrl.split('/').pop().split('?')[0]
+                                  : lecture.lectureUrl.split('/').pop()
                               })} className='text-blue-500 cursor-pointer'>Preview</p>}
                               <p>{humanizeDuration(lecture.lectureDuration * 60 * 1000, { units: ['h', 'm'] })}</p>
                             </div>

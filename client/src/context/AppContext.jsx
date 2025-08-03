@@ -70,16 +70,21 @@ export const AppContextProvider = (props) => {
     // Fetch User Enrolled Courses
     const fetchUserEnrolledCourses = async () => {
 
-        const token = await getToken();
+        try {
+            const token = await getToken();
 
-        const { data } = await axios.get(backendUrl + '/api/user/enrolled-courses',
-            { headers: { Authorization: `Bearer ${token}` } })
+            const { data } = await axios.get(backendUrl + '/api/user/enrolled-courses',
+                { headers: { Authorization: `Bearer ${token}` } })
 
-        if (data.success) {
-            setEnrolledCourses(data.enrolledCourses.reverse())
-        } else (
-            toast.error(data.message)
-        )
+            if (data.success) {
+                setEnrolledCourses(data.enrolledCourses.reverse())
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            console.error('Error fetching enrolled courses:', error)
+            toast.error('Failed to fetch enrolled courses')
+        }
 
     }
 
